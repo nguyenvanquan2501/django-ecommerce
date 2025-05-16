@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Django E-commerce{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- CSRF Token Setup -->
+    {% csrf_token %}
+    <script>
+        // Hàm lấy CSRF token từ cookie hoặc form
+        function getCSRFToken() {
+            // Thử lấy từ cookie trước
+            let csrftoken = document.cookie.split(';')
+                .find(row => row.trim().startsWith('csrftoken='));
+            
+            if (csrftoken) {
+                return csrftoken.split('=')[1];
+            }
+            
+            // Nếu không có trong cookie, lấy từ form
+            const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+            return tokenElement ? tokenElement.value : null;
+        }
+
+        // Thiết lập CSRF token cho AJAX requests
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrftoken = getCSRFToken();
+            if (!csrftoken) {
+                console.error('CSRF token not found');
+                return;
+            }
+
+            // Thêm CSRF token vào tất cả các form
+            document.querySelectorAll('form').forEach(function(form) {
+                if (!form.querySelector('input[name="csrfmiddlewaretoken"]')) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrfmiddlewaretoken';
+                    input.value = csrftoken;
+                    form.appendChild(input);
+                }
+            });
+
+            // Thêm CSRF token vào header của mọi AJAX request
+            const oldXHR = window.XMLHttpRequest;
+            function newXHR() {
+                const xhr = new oldXHR();
+                const send = xhr.send;
+                xhr.send = function() {
+                    this.setRequestHeader('X-CSRFToken', csrftoken);
+                    return send.apply(this, arguments);
+                }
+                return xhr;
+            }
+            window.XMLHttpRequest = newXHR;
+
+            // Thêm CSRF token vào header của mọi fetch request
+            const originalFetch = window.fetch;
+            window.fetch = function() {
+                let [resource, config] = arguments;
+                config = config || {};
+                config.headers = config.headers || {};
+                config.headers['X-CSRFToken'] = csrftoken;
+                return originalFetch(resource, config);
+            };
+        });
+    </script>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home:index' %}">
+                <i class="fas fa-store"></i> Django E-commerce
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home:index' %}">
+                            <i class="fas fa-home"></i> Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'products:product_list' %}">
+                            <i class="fas fa-shopping-bag"></i> Sản phẩm
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:cart' %}">
+                            <i class="fas fa-shopping-cart"></i> Giỏ hàng
+                            {% if cart_count %}
+                            <span class="badge bg-danger rounded-pill">{{ cart_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:profile' user.username %}">
+                                    <i class="fas fa-user-circle"></i> Hồ sơ
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:order_history' %}">
+                                    <i class="fas fa-history"></i> Lịch sử đơn hàng
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:statistics' %}">
+                                    <i class="fas fa-chart-bar"></i> Thống kê
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:register' %}">
+                            <i class="fas fa-user-plus"></i> Đăng ký
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    {% block start %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Về chúng tôi</h5>
+                    <p>Django E-commerce - Website bán hàng trực tuyến</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h5>Liên hệ</h5>
+                    <p>Email: contact@example.com</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

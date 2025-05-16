@@ -1,0 +1,158 @@
+{% extends 'base/base.html' %}
+{% block title %}Hóa đơn #{{ order.order_id }}{% endblock %}
+
+{% block start %}
+<section class="section-content padding-y">
+  <div class="container">
+    <div class="card">
+      <!-- Header -->
+      <div class="card-header bg-primary text-white">
+        <div class="row">
+          <div class="col text-center">
+            <h2 class="mb-0">HÓA ĐƠN BÁN HÀNG</h2>
+            <p class="mb-0">Mã đơn hàng: #{{ order.order_id }}</p>
+            <p class="mb-0">Ngày đặt hàng: {{ order.order_date|date:"d/m/Y H:i" }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="row mb-4">
+          <!-- Thông tin khách hàng -->
+          <div class="col-md-6">
+            <h5 class="mb-3">Thông tin khách hàng:</h5>
+            <p class="mb-1">
+              <strong>Họ tên:</strong> {{ order.shipping_address.first_name }} {{ order.shipping_address.last_name }}
+            </p>
+            <p class="mb-1">
+              <strong>Số điện thoại:</strong> {{ order.shipping_address.phone }}
+            </p>
+            <p class="mb-1">
+              <strong>Địa chỉ giao hàng:</strong><br>
+              {{ order.shipping_address.street }}<br>
+              {{ order.shipping_address.ward.name }}, {{ order.shipping_address.district.name }}<br>
+              {{ order.shipping_address.city.name }}
+            </p>
+          </div>
+
+          <!-- Thông tin đơn hàng -->
+          <div class="col-md-6">
+            <h5 class="mb-3">Thông tin đơn hàng:</h5>
+            <p class="mb-1">
+              <strong>Trạng thái đơn hàng:</strong>
+              <span class="badge bg-{{ order.get_status_display_class }}">
+                {{ order.get_status_display }}
+              </span>
+            </p>
+            <p class="mb-1">
+              <strong>Phương thức thanh toán:</strong>
+              {{ order.get_payment_method_display }}
+            </p>
+            <p class="mb-1">
+              <strong>Trạng thái thanh toán:</strong>
+              <span class="badge bg-{{ order.get_payment_status_display_class }}">
+                {{ order.get_payment_status_display }}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Chi tiết sản phẩm -->
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Kích cỡ</th>
+                <th class="text-center">Số lượng</th>
+                <th class="text-end">Đơn giá</th>
+                <th class="text-end">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+              <tr>
+                <td>{{ item.product.product_name }}</td>
+                <td>{{ item.size_variant.size_name|default:"N/A" }}</td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-end">{{ item.product_price|floatformat:0 }} VNĐ</td>
+                <td class="text-end">{{ item.get_total|floatformat:0 }} VNĐ</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tổng cộng -->
+        <div class="row">
+          <div class="col-md-6"></div>
+          <div class="col-md-6">
+            <table class="table table-clear">
+              <tbody>
+                <tr>
+                  <td class="text-end"><strong>Tạm tính:</strong></td>
+                  <td class="text-end">{{ order.order_total_price|floatformat:0 }} VNĐ</td>
+                </tr>
+                {% if order.coupon %}
+                <tr>
+                  <td class="text-end"><strong>Giảm giá:</strong></td>
+                  <td class="text-end">-{{ order.coupon.discount_amount|floatformat:0 }} VNĐ</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td class="text-end"><strong>Phí vận chuyển:</strong></td>
+                  <td class="text-end">{{ order.shipping_fee|floatformat:0 }} VNĐ</td>
+                </tr>
+                <tr>
+                  <td class="text-end"><strong>Tổng cộng:</strong></td>
+                  <td class="text-end"><strong>{{ order.grand_total|floatformat:0 }} VNĐ</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {% if order.payment_method == 'vnpay' %}
+        <!-- Thông tin thanh toán VNPay -->
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card bg-light">
+              <div class="card-body">
+                <h5 class="card-title">Thông tin thanh toán VNPay</h5>
+                <p class="mb-1">
+                  <strong>Mã giao dịch:</strong> {{ order.vnpay_transaction_no }}
+                </p>
+                <p class="mb-1">
+                  <strong>Thời gian thanh toán:</strong> {{ order.vnpay_payment_date|date:"H:i:s d/m/Y" }}
+                </p>
+                <p class="mb-0 text-success">
+                  <i class="fas fa-check-circle"></i> Giao dịch đã được xác nhận
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="row mt-4">
+          <div class="col-12 text-center">
+            <p class="mb-1">Cảm ơn quý khách đã mua hàng tại cửa hàng của chúng tôi!</p>
+            <p class="mb-0 text-muted">Mọi thắc mắc xin vui lòng liên hệ: support@example.com</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nút điều hướng -->
+    <div class="text-center mt-4">
+      <a href="{% url 'accounts:order_history' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách đơn hàng
+      </a>
+      <a href="{% url 'home:index' %}" class="btn btn-primary">
+        <i class="fas fa-shopping-cart me-2"></i>Tiếp tục mua sắm
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %} 

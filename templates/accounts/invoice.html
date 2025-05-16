@@ -1,0 +1,174 @@
+{% extends 'base/base.html' %}
+{% block title %}Hóa đơn #{{ order.order_id }}{% endblock %}
+{% block start %}
+{% load static %}
+
+<div class="container mt-5 mb-5">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Hóa đơn #{{ order.order_id }}</h4>
+            <div>
+              <button onclick="window.print()" class="btn btn-light">
+                <i class="fas fa-print me-2"></i>In hóa đơn
+              </button>
+              <a href="{% url 'accounts:order_details' order.order_id %}" class="btn btn-light ms-2">
+                <i class="fas fa-arrow-left me-2"></i>Quay lại
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Thông tin cửa hàng -->
+          <div class="row mb-4">
+            <div class="col-sm-6">
+              <h6 class="mb-3">Từ:</h6>
+              <div><strong>Bootstrap E-commerce</strong></div>
+              <div>123 Đường ABC, Quận XYZ</div>
+              <div>Hà Nội, Việt Nam</div>
+              <div>Email: info@bootstrap-ecommerce.com</div>
+              <div>Phone: +1 234 567 8901</div>
+            </div>
+
+            <div class="col-sm-6">
+              <h6 class="mb-3">Đến:</h6>
+              <div><strong>{{ order.user.get_full_name }}</strong></div>
+              <div>{{ order.shipping_address }}</div>
+              <div>Email: {{ order.user.email }}</div>
+              <div>Điện thoại: {{ order.shipping_address.phone }}</div>
+            </div>
+          </div>
+
+          <!-- Thông tin đơn hàng -->
+          <div class="table-responsive-sm">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th style="width: 80px">Ảnh</th>
+                  <th>Sản phẩm</th>
+                  <th class="text-center">Số lượng</th>
+                  <th class="text-end">Đơn giá</th>
+                  <th class="text-end">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in items %}
+                <tr>
+                  <td>
+                    {% if item.product_image %}
+                      <img src="{{ item.product_image.url }}" alt="{{ item.product_name }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% elif item.product.product_images.exists %}
+                      <img src="{{ item.product.product_images.first.image.url }}" alt="{{ item.product_name }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                      <div class="bg-light text-center" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-image text-muted"></i>
+                      </div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="product-info">
+                      <strong>{{ item.product_name|default:"Sản phẩm đã xóa" }}</strong>
+                      {% if item.size_name or item.color_name %}
+                      <small class="text-muted d-block">
+                        {% if item.size_name %}
+                          Size: {{ item.size_name }}
+                          {% if item.size_price %}(+{{ item.size_price|floatformat:0 }} VNĐ){% endif %}
+                        {% endif %}
+                        {% if item.color_name %}
+                          {% if item.size_name %} | {% endif %}
+                          Màu: {{ item.color_name }}
+                          {% if item.color_price %}(+{{ item.color_price|floatformat:0 }} VNĐ){% endif %}
+                        {% endif %}
+                      </small>
+                      {% endif %}
+                      {% if not item.product %}
+                        <div class="text-warning">
+                          <small><i class="fas fa-exclamation-triangle"></i> Sản phẩm này đã không còn trong cửa hàng</small>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td class="text-center">{{ item.quantity }}</td>
+                  <td class="text-end">{{ item.product_price|floatformat:0 }} VNĐ</td>
+                  <td class="text-end">{{ item.get_total_price|floatformat:0 }} VNĐ</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="text-end"><strong>Tạm tính:</strong></td>
+                  <td class="text-end">{{ order.order_total_price|floatformat:0 }} VNĐ</td>
+                </tr>
+                <tr>
+                  <td colspan="3" class="text-end"><strong>Phí vận chuyển:</strong></td>
+                  <td class="text-end">{{ order.shipping_fee|floatformat:0 }} VNĐ</td>
+                </tr>
+                {% if order.coupon %}
+                <tr>
+                  <td colspan="3" class="text-end"><strong>Giảm giá:</strong></td>
+                  <td class="text-end">-{{ order.coupon.discount_amount|floatformat:0 }} VNĐ</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
+                  <td class="text-end"><strong>{{ order.grand_total|floatformat:0 }} VNĐ</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Thông tin thanh toán -->
+          <div class="row">
+            <div class="col-lg-4 col-sm-5 ms-auto">
+              <table class="table table-clear">
+                <tbody>
+                  <tr>
+                    <td><strong>Phương thức thanh toán:</strong></td>
+                    <td>{{ order.get_payment_method_display }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Trạng thái thanh toán:</strong></td>
+                    <td>
+                      <span class="badge bg-{{ order.get_payment_status_display_class }}">
+                        {{ order.get_payment_status_display }}
+                      </span>
+                    </td>
+                  </tr>
+                  {% if order.payment_method == 'vnpay' and order.vnpay_transaction_no %}
+                  <tr>
+                    <td><strong>Mã giao dịch VNPay:</strong></td>
+                    <td>{{ order.vnpay_transaction_no }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Thời gian thanh toán:</strong></td>
+                    <td>{{ order.vnpay_payment_date|date:"H:i:s d/m/Y" }}</td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@media print {
+  .btn, .navbar, .footer {
+    display: none !important;
+  }
+  .card {
+    border: none !important;
+  }
+  .card-header {
+    background-color: #fff !important;
+    color: #000 !important;
+  }
+}
+</style>
+
+{% endblock %} 

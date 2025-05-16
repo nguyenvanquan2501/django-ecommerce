@@ -1,0 +1,42 @@
+{% load static %}
+
+<footer class="footer">
+  <!-- Footer top content, newsletters, social links etc. -->
+  <div class="footer-top">
+    <div class="container">
+      <!-- your existing top content here -->
+    </div>
+  </div>
+
+  <!-- Footer medium: Quick links -->
+  <div class="footer-medium">
+    <div class="container">
+      <div class="bottom-inner">
+        <div class="row">
+          <div class="col-12">
+            <div class="single-footer f-link">
+              <ul>
+                <li><a href="{% url 'home:about' %}">About Us</a></li>
+                <li><a href="{% url 'home:contact' %}">Contact Us</a></li>
+                <li><a href="{% url 'home:shipping-address' %}">Delivery</a></li>
+                <li><a href="{% url 'home:terms-and-conditions' %}">Terms and Conditions</a></li>
+                <li><a href="{% url 'home:privacy-policy' %}">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer bottom: copyright -->
+  <div class="footer-bottom">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <p>&copy; {{ now|date:"Y" }} Your Company. All Rights Reserved.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

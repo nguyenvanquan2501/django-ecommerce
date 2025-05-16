@@ -1,0 +1,7 @@
+<a href="{% url 'products:add_to_wishlist' product.uid %}" 
+   class="btn btn-light toggle-wishlist-btn"
+   data-product-id="{{ product.uid }}"
+   data-bs-toggle="tooltip" 
+   title="{% if product.in_wishlist %}Đã thêm vào yêu thích{% else %}Thêm vào yêu thích{% endif %}">
+    <i class="fas fa-heart {% if product.in_wishlist %}text-danger{% endif %}"></i>
+</a> 

@@ -1,0 +1,7 @@
+<!-- Wishlist Link -->
+<a href="{% url 'products:wishlist' %}" class="nav-link position-relative">
+    <i class="fas fa-heart"></i>
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger wishlist-count">
+        {{ request.user.wishlist.count }}
+    </span>
+</a> 

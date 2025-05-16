@@ -1,0 +1,215 @@
+{% extends "base/base.html" %}
+{% block title %}Profile{% endblock title %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block start %}
+
+<style>
+  .img-account-profile {
+    height: 10rem;
+  }
+
+  .rounded-circle {
+    border-radius: 50% !important;
+  }
+
+  .card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgb(33 40 50 / 15%);
+  }
+
+  .card .card-header {
+    font-weight: 500;
+  }
+
+  .card-header:first-child {
+    border-radius: 0.35rem 0.35rem 0 0;
+  }
+
+  .card-header {
+    padding: 1rem 1.35rem;
+    margin-bottom: 0;
+    background-color: rgba(33, 40, 50, 0.03);
+    border-bottom: 1px solid rgba(33, 40, 50, 0.125);
+  }
+
+  .nav-borders .nav-link.active {
+    color: #0061f2;
+    border-bottom-color: #0061f2;
+  }
+
+  .nav-borders .nav-link {
+    color: #69707a;
+    border-bottom-width: 0.125rem;
+    border-bottom-style: solid;
+    border-bottom-color: transparent;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .address-card {
+    margin-bottom: 1rem;
+  }
+
+  .address-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .security-section {
+    margin-top: 2rem;
+  }
+
+  .security-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solidrgb(39, 87, 135);
+    border-radius: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .security-item-title {
+    font-weight: 500;
+  }
+
+  .security-item-description {
+    color: #69707a;
+    margin-bottom: 0;
+  }
+</style>
+
+<section class="section-content padding-bottom">
+  <div class="container-xl px-4 mt-4">
+    {% include "base/alert.html" %}
+    <div class="d-flex gap-3 mb-4 justify-content-center">
+      <a class="btn btn-outline-primary d-flex align-items-center px-4 py-2 shadow-sm rounded-3 {% if request.resolver_match.url_name == 'profile' %}active border-primary bg-light{% endif %}"
+         href="{% url 'accounts:profile' username=user.username %}">
+        <i class="fas fa-user-circle me-2" style="font-size: 1.5rem;"></i>
+        <span>Hồ sơ</span>
+      </a>
+      <a class="btn btn-outline-primary d-flex align-items-center px-4 py-2 shadow-sm rounded-3 {% if request.resolver_match.url_name == 'shipping_address_list' %}active border-primary bg-light{% endif %}"
+         href="{% url 'accounts:shipping_address_list' %}">
+        <i class="fas fa-address-book me-2" style="font-size: 1.5rem;"></i>
+        <span>Địa chỉ</span>
+      </a>
+      <a class="btn btn-outline-primary d-flex align-items-center px-4 py-2 shadow-sm rounded-3 {% if request.resolver_match.url_name == 'password_change' %}active border-primary bg-light{% endif %}"
+         href="{% url 'accounts:password_change' %}">
+        <i class="fas fa-lock me-2" style="font-size: 1.5rem;"></i>
+        <span>Bảo mật</span>
+      </a>
+      <a class="btn btn-outline-primary d-flex align-items-center px-4 py-2 shadow-sm rounded-3 {% if request.resolver_match.url_name == 'order_history' %}active border-primary bg-light{% endif %}"
+         href="{% url 'accounts:order_history' %}">
+        <i class="fas fa-history me-2" style="font-size: 1.5rem;"></i>
+        <span>Đơn hàng</span>
+      </a>
+    </div>
+
+    <hr class="mt-0 mb-4" />
+
+    <!-- Profile Picture Section -->
+    <div class="row">
+      <div class="col-xl-4">
+        <div class="card mb-4 mb-xl-0">
+          <div class="card-header">Ảnh đại diện</div>
+          <div class="card-body text-center">
+            <form method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
+
+              {% if user.profile.profile_image %}
+              <img class="img-account-profile rounded-circle mb-2"
+                src="{{ user.profile.profile_image.url }}" alt="Profile Picture"/>
+              {% else %}
+              <img class="img-account-profile rounded-circle mb-2"
+                src="{% static 'images/default-profile.png' %}"
+                alt="Default Profile Picture"/>
+              {% endif %}
+
+              <div class="small font-italic text-muted mb-4">
+                JPG hoặc PNG không quá 5 MB
+              </div>
+
+              <div class="mb-3">
+                <input type="file" name="profile_image" class="form-control" accept="image/*">
+              </div>
+
+              <button type="submit" class="btn btn-primary" name="update_image">
+                Cập nhật ảnh
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Details Section -->
+      <div class="col-xl-8">
+        <div class="card mb-4">
+          <div class="card-header">Thông tin tài khoản</div>
+          <div class="card-body">
+            <form method="POST">
+              {% csrf_token %}
+              {{ user_form|crispy }}
+              {{ profile_form|crispy }}
+              <button class="btn btn-primary" type="submit" name="update_profile">
+                Cập nhật thông tin
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="card mb-4">
+          <div class="card-header">Bảo mật</div>
+          <div class="card-body">
+            <div class="security-item">
+              <div>
+                <div class="security-item-title">Mật khẩu</div>
+                <p class="security-item-description">Thay đổi mật khẩu của bạn</p>
+              </div>
+              <a href="{% url 'accounts:password_change' %}" class="btn btn-primary">
+                Đổi mật khẩu
+              </a>
+            </div>
+            <div class="security-item">
+              <div>
+                <div class="security-item-title">Xóa tài khoản</div>
+                <p class="security-item-description">Xóa vĩnh viễn tài khoản và dữ liệu của bạn</p>
+              </div>
+              <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                Xóa tài khoản
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận xóa tài khoản</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác và tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <form action="{% url 'accounts:delete_account' %}" method="POST" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Xóa tài khoản</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

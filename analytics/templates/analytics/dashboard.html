@@ -1,0 +1,261 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load analytics_extras %}
+
+{% block title %}Thống kê doanh thu{% endblock %}
+
+{% block extra_css %}
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 400px;
+    width: 100%;
+}
+.card {
+    margin-bottom: 2rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    border-radius: 0.5rem;
+}
+.stats-card {
+    transition: all 0.3s ease;
+    background: linear-gradient(45deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+}
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.stats-card .card-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+.stats-card .card-text {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+.table th {
+    border-top: none;
+}
+</style>
+{% endblock %}
+
+{% block start %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="mb-3">
+                <i class="fas fa-chart-line me-2"></i>
+                Thống kê doanh thu và đơn hàng
+            </h2>
+            <p class="text-muted">Năm {{ current_year }}</p>
+        </div>
+    </div>
+
+    <!-- Thống kê tổng quan -->
+    <div class="row mb-4">
+        {% for quarter in quarterly_sales %}
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-calendar-quarter me-2"></i>
+                        Quý {{ quarter.quarter }}
+                    </h5>
+                    <p class="card-text">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        <strong>Doanh thu:</strong> {{ quarter.total_sales|floatformat:0 }} VNĐ<br>
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        <strong>Số đơn:</strong> {{ quarter.order_count }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="row">
+        <!-- Biểu đồ doanh thu theo tháng -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Doanh thu theo tháng
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="monthlySalesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top sản phẩm bán chạy -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-star me-2"></i>
+                        Top sản phẩm bán chạy
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Số lượng</th>
+                                    <th>Doanh thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in best_selling_products %}
+                                <tr>
+                                    <td>{{ product.product__product_name }}</td>
+                                    <td>{{ product.total_quantity }}</td>
+                                    <td>{{ product.total_revenue|floatformat:0 }} VNĐ</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ so sánh các năm -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        So sánh doanh thu các năm
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="yearlyComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Định dạng tiền tệ VNĐ
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(value);
+    };
+
+    // Dữ liệu cho biểu đồ doanh thu theo tháng
+    const monthlyData = {
+        labels: [{% for month in months %}'{{ month }}',{% endfor %}],
+        datasets: [{
+            label: 'Doanh thu',
+            data: [
+                {% for month in monthly_sales %}
+                {{ month.total_sales|default:0 }},
+                {% endfor %}
+            ],
+            borderColor: '#4b6cb7',
+            backgroundColor: 'rgba(75, 108, 183, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+        }]
+    };
+
+    // Dữ liệu cho biểu đồ so sánh các năm
+    const yearlyData = {
+        labels: [{% for year in yearly_sales %}'{{ year.year }}',{% endfor %}],
+        datasets: [{
+            label: 'Doanh thu',
+            data: [{% for year in yearly_sales %}{{ year.total_sales }},{% endfor %}],
+            backgroundColor: 'rgba(75, 108, 183, 0.7)',
+            borderColor: '#4b6cb7',
+            borderWidth: 1,
+            borderRadius: 5
+        }]
+    };
+
+    // Cấu hình chung cho biểu đồ
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return formatCurrency(context.raw);
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return formatCurrency(value);
+                    }
+                }
+            }
+        }
+    };
+
+    // Vẽ biểu đồ doanh thu theo tháng
+    new Chart(document.getElementById('monthlySalesChart'), {
+        type: 'line',
+        data: monthlyData,
+        options: {
+            ...commonOptions,
+            plugins: {
+                ...commonOptions.plugins,
+                title: {
+                    display: true,
+                    text: 'Doanh thu theo tháng năm ' + {{ current_year }}
+                }
+            }
+        }
+    });
+
+    // Vẽ biểu đồ so sánh các năm
+    new Chart(document.getElementById('yearlyComparisonChart'), {
+        type: 'bar',
+        data: yearlyData,
+        options: {
+            ...commonOptions,
+            plugins: {
+                ...commonOptions.plugins,
+                title: {
+                    display: true,
+                    text: 'So sánh doanh thu các năm'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

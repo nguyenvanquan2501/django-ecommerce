@@ -1,0 +1,66 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+<script>
+// Thêm CSRF token vào tất cả AJAX requests
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Thêm CSRF token vào header của mọi AJAX request
+document.addEventListener('DOMContentLoaded', function() {
+    // Thêm CSRF token vào tất cả các form
+    document.querySelectorAll('form').forEach(function(form) {
+        if (!form.querySelector('input[name="csrfmiddlewaretoken"]')) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrfmiddlewaretoken';
+            input.value = csrftoken;
+            form.appendChild(input);
+        }
+    });
+
+    // Thêm CSRF token vào AJAX requests
+    const oldXHR = window.XMLHttpRequest;
+    function newXHR() {
+        const xhr = new oldXHR();
+        const send = xhr.send;
+        xhr.send = function() {
+            if (!this.headers) this.headers = {};
+            if (!this.headers['X-CSRFToken']) {
+                this.setRequestHeader('X-CSRFToken', csrftoken);
+            }
+            return send.apply(this, arguments);
+        }
+        return xhr;
+    }
+    window.XMLHttpRequest = newXHR;
+});
+</script>
+{% endblock %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}
+{% if user.is_staff %}
+<a href="{% url 'analytics:dashboard' %}" class="btn btn-info" style="margin: 10px;">Thống kê bán hàng</a>
+{% endif %}
+{% endblock %} 

@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Giỏ hàng{% endblock %}
+
+{% block extra_css %}
+<style>
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 120px;
+}
+
+.quantity-controls .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.quantity-controls .quantity-input {
+    width: 60px;
+    text-align: center;
+    padding: 0.25rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.quantity-controls .quantity-input::-webkit-inner-spin-button,
+.quantity-controls .quantity-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Giỏ hàng của bạn</h1>
+
+    {% if cart.cart_items.exists %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Kích cỡ</th>
+                                <th>Số lượng</th>
+                                <th>Giá</th>
+                                <th>Tổng</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart.cart_items.all %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.product.product_images.first %}
+                                        <img src="{{ item.product.product_images.first.image.url }}" 
+                                            alt="{{ item.product.product_name }}" 
+                                            style="width: 50px; height: 50px; object-fit: cover;" 
+                                            class="me-2">
+                                        {% endif %}
+                                        <a href="{% url 'products:get_product' item.product.slug %}">
+                                            {{ item.product.product_name }}
+                                        </a>
+                                    </div>
+                                </td>
+                                <td>{{ item.size_variant.size_name|default:"N/A" }}</td>
+                                <td>
+                                    <div class="quantity-controls">
+                                        <button type="button" class="btn btn-outline-secondary decrease-quantity" 
+                                                data-item-id="{{ item.uid }}" 
+                                                data-stock="{{ item.product.stock }}">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" class="form-control quantity-input" 
+                                               value="{{ item.quantity }}" 
+                                               min="1" 
+                                               max="{{ item.product.stock }}"
+                                               data-item-id="{{ item.uid }}"
+                                               data-stock="{{ item.product.stock }}"
+                                               readonly>
+                                        <button type="button" class="btn btn-outline-secondary increase-quantity" 
+                                                data-item-id="{{ item.uid }}"
+                                                data-stock="{{ item.product.stock }}">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>{{ item.get_unit_price|floatformat:0 }} VNĐ</td>
+                                <td id="item-total-{{ item.uid }}">{{ item.get_product_price|floatformat:0 }} VNĐ</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'accounts:remove_cart' item.uid %}" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        <a href="{% url 'accounts:add_to_wishlist_from_cart' item.uid %}" 
+                                            class="btn btn-sm btn-info">
+                                            <i class="fas fa-heart"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tổng đơn hàng</h5>
+                    <table class="table">
+                        <tr>
+                            <td>Tạm tính:</td>
+                            <td class="text-end">{{ cart.get_cart_total|floatformat:0 }} VNĐ</td>
+                        </tr>
+                        {% if cart.coupon %}
+                        <tr>
+                            <td>
+                                Mã giảm giá ({{ cart.coupon.coupon_code }}):
+                                <a href="{% url 'accounts:remove_coupon' cart.id %}" class="text-danger">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </td>
+                            <td class="text-end">-{{ cart.coupon.discount_amount|floatformat:0 }} VNĐ</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="fw-bold">
+                            <td>Tổng cộng:</td>
+                            <td class="text-end" id="cart-total">{{ cart.get_cart_total_price_after_coupon|floatformat:0 }} VNĐ</td>
+                        </tr>
+                    </table>
+
+                    {% if not cart.coupon %}
+                    <form method="post" action="{% url 'accounts:apply_coupon' %}" class="mb-3">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" name="coupon_code" class="form-control" placeholder="Mã giảm giá">
+                            <button type="submit" class="btn btn-outline-primary">Áp dụng</button>
+                        </div>
+                    </form>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'accounts:checkout' %}" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart me-2"></i>Tiến hành đặt hàng
+                        </a>
+                        <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Tiếp tục mua sắm
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Giỏ hàng của bạn đang trống. 
+        <a href="{% url 'products:product_list' %}">Tiếp tục mua sắm</a>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+    }).format(amount).replace('₫', 'VNĐ');
+}
+
+function updateCartItem(itemId, quantity, action, stock) {
+    $.ajax({
+        url: "{% url 'accounts:update_cart_item' %}",
+        type: "POST",
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        data: JSON.stringify({
+            cart_item_id: itemId,
+            quantity: quantity,
+            action: action
+        }),
+        contentType: "application/json",
+        success: function(response) {
+            if (response.status === 'success') {
+                // Cập nhật số lượng hiển thị
+                const quantityInput = $(`input[data-item-id="${itemId}"]`);
+                quantityInput.val(response.quantity);
+
+                // Cập nhật tổng tiền của item
+                $(`#item-total-${itemId}`).text(formatCurrency(response.item_total));
+
+                // Cập nhật tổng tiền giỏ hàng
+                $('#cart-total').text(formatCurrency(response.cart_total));
+                if ($('#cart-total-with-coupon').length) {
+                    $('#cart-total-with-coupon').text(formatCurrency(response.cart_total_with_coupon));
+                }
+
+                // Kiểm tra và vô hiệu hóa nút nếu cần
+                const increaseBtn = $(`.increase-quantity[data-item-id="${itemId}"]`);
+                const decreaseBtn = $(`.decrease-quantity[data-item-id="${itemId}"]`);
+
+                decreaseBtn.prop('disabled', response.quantity <= 1);
+                increaseBtn.prop('disabled', response.quantity >= stock);
+            }
+
+            // Hiển thị thông báo
+            if (response.message) {
+                // Sử dụng toast hoặc alert tùy giao diện
+                alert(response.message);
+            }
+        },
+        error: function(xhr) {
+            let message = 'Có lỗi xảy ra';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            alert(message);
+        }
+    });
+}
+
+$(document).ready(function() {
+    // Khởi tạo trạng thái ban đầu cho các nút
+    $('.quantity-input').each(function() {
+        const quantity = parseInt($(this).val());
+        const stock = parseInt($(this).data('stock'));
+        const itemId = $(this).data('item-id');
+        
+        $(`.decrease-quantity[data-item-id="${itemId}"]`).prop('disabled', quantity <= 1);
+        $(`.increase-quantity[data-item-id="${itemId}"]`).prop('disabled', quantity >= stock);
+    });
+
+    // Xử lý nút tăng số lượng
+    $('.increase-quantity').click(function() {
+        const itemId = $(this).data('item-id');
+        const stock = parseInt($(this).data('stock'));
+        const currentQty = parseInt($(`input[data-item-id="${itemId}"]`).val());
+        
+        if (currentQty < stock) {
+            updateCartItem(itemId, null, 'increase', stock);
+        }
+    });
+
+    // Xử lý nút giảm số lượng
+    $('.decrease-quantity').click(function() {
+        const itemId = $(this).data('item-id');
+        const stock = parseInt($(this).data('stock'));
+        const currentQty = parseInt($(`input[data-item-id="${itemId}"]`).val());
+        
+        if (currentQty > 1) {
+            updateCartItem(itemId, null, 'decrease', stock);
+        }
+    });
+
+    // Vô hiệu hóa việc nhập trực tiếp
+    $('.quantity-input').on('keydown paste', function(e) {
+        e.preventDefault();
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

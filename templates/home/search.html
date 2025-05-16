@@ -1,0 +1,253 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}Tìm kiếm{% endblock %}
+{% block start %}
+
+<style>
+  .search-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .search-title {
+    font-size: 1.5rem;
+    color: #495057;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .search-form {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .search-input-group {
+    display: flex;
+    gap: 10px;
+  }
+
+  .search-input {
+    flex: 1;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    transition: all 0.3s;
+  }
+
+  .search-input:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
+
+  .search-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .search-button:hover {
+    background: #0056b3;
+  }
+
+  .card {
+    border: none;
+    transition: transform 0.3s, box-shadow 0.3s;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  .img-wrap {
+    position: relative;
+    padding-top: 100%;
+    overflow: hidden;
+  }
+
+  .img-wrap img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+
+  .img-wrap.out-of-stock::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+  }
+
+  .img-wrap.out-of-stock::after {
+    content: "Hết hàng";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    background: rgba(220, 53, 69, 0.9);
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    z-index: 2;
+  }
+
+  .card:hover .img-wrap img {
+    transform: scale(1.05);
+  }
+
+  .info-wrap {
+    padding: 15px;
+    background: white;
+  }
+
+  .info-wrap .title {
+    color: #212529;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1.4;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .info-wrap .title:hover {
+    color: #007bff;
+  }
+
+  .info-wrap .price {
+    font-size: 1.1rem;
+    color: #dc3545;
+    font-weight: 600;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 20px;
+  }
+
+  .no-results-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 20px;
+  }
+
+  .no-results-text {
+    font-size: 1.5rem;
+    color: #495057;
+    margin-bottom: 10px;
+  }
+
+  .no-results-suggestion {
+    color: #6c757d;
+    margin-bottom: 20px;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .product-card {
+    animation: fadeIn 0.5s ease-out;
+  }
+</style>
+
+<div class="container mt-4">
+  {% include 'base/alert.html' %}
+
+  <!-- Search Header -->
+  <div class="search-header">
+    <h1 class="search-title">Kết quả tìm kiếm cho "{{ query }}"</h1>
+    <form method="GET" action="{% url 'home:product_search' %}" class="search-form">
+      <div class="search-input-group">
+        <input type="text" name="q" class="search-input form-control" 
+               value="{{ query }}" placeholder="Tìm kiếm sản phẩm...">
+        <button type="submit" class="search-button">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Product List -->
+  {% if products %}
+  <div class="row">
+    {% for product in products %}
+    <div class="col-6 col-md-4 col-lg-3 product-card">
+      <div class="card h-100">
+        <div class="img-wrap {% if product.stock <= 0 %}out-of-stock{% endif %}">
+          <img src="{{ product.product_images.first.image.url }}" alt="{{ product.product_name }}">
+        </div>
+        <div class="info-wrap">
+          <a href="{% url 'products:get_product' product.slug %}" class="title">
+            {{ product.product_name }}
+          </a>
+          <div class="price">{{ product.price|floatformat:0|intcomma }} VNĐ</div>
+          <div class="d-flex gap-2 mt-2">
+            {% if product.stock > 0 %}
+            <a href="{% url 'accounts:add_to_cart' product.uid %}" 
+               class="btn btn-primary btn-sm flex-grow-1">
+              <i class="fas fa-shopping-cart"></i>
+            </a>
+            {% endif %}
+            {% if user.is_authenticated %}
+            <a href="{% url 'products:add_to_wishlist' product.uid %}" 
+               class="btn btn-light btn-sm toggle-wishlist-btn"
+               data-product-id="{{ product.uid }}"
+               data-bs-toggle="tooltip" 
+               title="{% if product.in_wishlist %}Bỏ khỏi yêu thích{% else %}Thêm vào yêu thích{% endif %}">
+              <i class="fas fa-heart {% if product.in_wishlist %}text-danger{% endif %}"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="no-results">
+    <div class="no-results-icon">
+      <i class="fas fa-search"></i>
+    </div>
+    <h2 class="no-results-text">Không tìm thấy sản phẩm nào</h2>
+    <p class="no-results-suggestion">
+      Hãy thử tìm kiếm với từ khóa khác hoặc xem các sản phẩm của chúng tôi
+    </p>
+    <a href="{% url 'products:product_list' %}" class="btn btn-primary">
+      <i class="fas fa-store me-2"></i>Xem tất cả sản phẩm
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

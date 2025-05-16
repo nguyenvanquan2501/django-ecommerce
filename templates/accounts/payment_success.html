@@ -1,0 +1,50 @@
+{% extends 'base/base.html' %}
+{% block title %}Thanh toán thành công{% endblock %}
+{% block start %}
+
+<!-- ============================ COMPONENT Payment Success ================================= -->
+<section class="section-content padding-bottom">
+  <div class="container-xl d-flex justify-content-center align-items-center mt-5">
+    <div class="row justify-content-center w-100">
+      <div class="col-xl-5">
+        <div class="card mb-4">
+          <div class="card-header bg-success text-white" style="text-align: center; font-size: 25px">
+            <i class="fas fa-check-circle mr-2"></i> Thanh toán thành công!
+          </div>
+          <div class="card-body text-center">
+            <p class="lead">
+              Đơn hàng của bạn với mã <strong>{{ order.order_id }}</strong> đã được xác nhận.
+            </p>
+            <p>Cảm ơn bạn đã mua sắm tại cửa hàng của chúng tôi!</p>
+            
+            <div class="mt-4">
+              <a href="{% url 'home:index' %}" class="btn btn-primary mr-3">
+                <i class="fas fa-shopping-cart mr-2"></i> Tiếp tục mua sắm
+              </a>
+              <a href="{% url 'accounts:order_details' order.order_id %}" class="btn btn-info">
+                <i class="fas fa-file-alt mr-2"></i> Xem chi tiết đơn hàng
+              </a>
+            </div>
+
+            {% if order.payment_method == 'vnpay' %}
+            <div class="mt-4 pt-3 border-top">
+              <h6 class="text-muted mb-3">Thông tin thanh toán VNPay</h6>
+              <p class="mb-1">
+                <strong>Mã giao dịch:</strong> {{ order.vnpay_transaction_no }}
+              </p>
+              <p class="mb-1">
+                <strong>Thời gian thanh toán:</strong> {{ order.vnpay_payment_date|date:"H:i:s d/m/Y" }}
+              </p>
+              <p class="mb-0 text-success">
+                <i class="fas fa-check-circle mr-1"></i> Giao dịch đã được xác nhận
+              </p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ============================ COMPONENT Payment Success END ================================= -->
+{% endblock %} 

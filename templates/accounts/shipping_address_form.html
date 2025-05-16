@@ -1,0 +1,167 @@
+{% extends "base/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgb(33 40 50 / 15%);
+  }
+  
+  .card .card-header {
+    font-weight: 500;
+    padding: 1rem 1.35rem;
+    margin-bottom: 0;
+    background-color: rgba(33, 40, 50, 0.03);
+    border-bottom: 1px solid rgba(33, 40, 50, 0.125);
+    border-radius: 0.35rem 0.35rem 0 0;
+  }
+  
+  .field-error {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+  }
+</style>
+{% endblock %}
+
+{% block start %}
+<section class="section-content padding-y">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="mb-0">{{ title }}</h4>
+          </div>
+          <div class="card-body">
+            <form method="POST" id="addressForm" novalidate>
+              {% csrf_token %}
+              
+              <div class="row">
+                <div class="col-md-6">
+                  {{ form.first_name|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                  {{ form.last_name|as_crispy_field }}
+                </div>
+              </div>
+
+              {{ form.street|as_crispy_field }}
+              {{ form.phone|as_crispy_field }}
+              {{ form.is_default|as_crispy_field }}
+
+              <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">
+                  Lưu địa chỉ
+                </button>
+                <a href="{% url 'accounts:shipping_address_list' %}" class="btn btn-secondary">Quay lại</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Form validation
+  const validateField = (field, value) => {
+    const errors = [];
+    
+    if (!value) {
+      errors.push('Trường này là bắt buộc');
+      return errors;
+    }
+
+    switch (field) {
+      case 'phone':
+        if (!/^\d+$/.test(value)) {
+          errors.push('Số điện thoại chỉ được chứa chữ số');
+        }
+        if (value.length !== 10) {
+          errors.push('Số điện thoại phải có 10 chữ số');
+        }
+        if (!value.startsWith('0')) {
+          errors.push('Số điện thoại phải bắt đầu bằng số 0');
+        }
+        break;
+      
+      case 'first_name':
+      case 'last_name':
+        if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value)) {
+          errors.push('Chỉ được chứa chữ cái và khoảng trắng');
+        }
+        break;
+    }
+
+    return errors;
+  };
+
+  const showFieldError = (fieldId, errors) => {
+    const field = document.getElementById(fieldId);
+    const errorDiv = field.parentElement.querySelector('.field-error');
+    
+    if (errors.length > 0) {
+      field.classList.add('is-invalid');
+      if (errorDiv) {
+        errorDiv.textContent = errors.join(', ');
+      } else {
+        const div = document.createElement('div');
+        div.className = 'field-error';
+        div.textContent = errors.join(', ');
+        field.parentElement.appendChild(div);
+      }
+      return false;
+    } else {
+      field.classList.remove('is-invalid');
+      if (errorDiv) {
+        errorDiv.remove();
+      }
+      return true;
+    }
+  };
+
+  // Initialize form
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('addressForm');
+
+    // Form validation
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      let isValid = true;
+
+      // Validate required fields
+      const requiredFields = ['first_name', 'last_name', 'street', 'phone'];
+      requiredFields.forEach(field => {
+        const input = document.getElementById(`id_${field}`);
+        const errors = validateField(field, input.value);
+        if (!showFieldError(`id_${field}`, errors)) {
+          isValid = false;
+        }
+      });
+
+      if (isValid) {
+        form.submit();
+      }
+    });
+
+    // Real-time validation
+    const validateOnChange = (e) => {
+      const field = e.target;
+      const fieldName = field.id.replace('id_', '');
+      const errors = validateField(fieldName, field.value);
+      showFieldError(field.id, errors);
+    };
+
+    ['first_name', 'last_name', 'phone'].forEach(field => {
+      document.getElementById(`id_${field}`).addEventListener('input', validateOnChange);
+    });
+  });
+</script>
+{% endblock %}

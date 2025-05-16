@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Đăng nhập</h2>
+                    
+                    <!-- Social Login Buttons -->
+                    <div class="text-center mb-4">
+                        <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn btn-danger btn-block mb-2">
+                            <i class="fab fa-google me-2"></i>Đăng nhập bằng Google
+                        </a>
+                        <a href="{% url 'social:begin' 'facebook' %}" class="btn btn-primary btn-block">
+                            <i class="fab fa-facebook-f me-2"></i>Đăng nhập bằng Facebook
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <span class="text-muted">hoặc</span>
+                    </div>
+                    
+                    <!-- Regular Login Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <button type="submit" class="btn btn-dark btn-block w-100">Đăng nhập</button>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <p class="mb-0">Chưa có tài khoản? <a href="{% url 'register' %}">Đăng ký ngay</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

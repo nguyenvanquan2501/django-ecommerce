@@ -1,0 +1,413 @@
+{% load static %}
+
+<style>
+  /* Navbar styles */
+  .navbar {
+    padding: 0.8rem 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+
+  .navbar-dark {
+    background: linear-gradient(135deg, #1a2a3d 0%, #2c5282 100%);
+  }
+
+  .nav-link {
+    color: rgba(255,255,255,0.9) !important;
+    font-weight: 500;
+    padding: 0.8rem 1.2rem !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    margin: 0 0.2rem;
+  }
+
+  .nav-link:hover {
+    color: #fff !important;
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .nav-link.active {
+    color: #fff !important;
+    background: rgba(255,255,255,0.2);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Search box styles */
+  .search-box {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .search-box .form-control {
+    border-radius: 12px;
+    padding: 12px 20px;
+    padding-right: 50px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+
+  .search-box .form-control::placeholder {
+    color: rgba(255,255,255,0.7);
+  }
+
+  .search-box .form-control:focus {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
+  }
+
+  .search-box .btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    transition: all 0.3s;
+  }
+
+  .search-box .btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  /* Header widgets */
+  .widgets-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .widget-header {
+    position: relative;
+  }
+
+  .widget-header .icon {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+  }
+
+  .widget-header .icon:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .widget-header .notify {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    background: #e53e3e;
+    border: 2px solid #1a2a3d;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .widget-header img {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+  }
+
+  .widget-header img:hover {
+    border-color: rgba(255,255,255,0.4);
+    transform: scale(1.05);
+  }
+
+  /* User info */
+  .user-info {
+    margin-left: 12px;
+    color: #fff;
+  }
+
+  .user-info .welcome {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+
+  .user-info .links a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    opacity: 0.8;
+    transition: all 0.3s;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .user-info .links a:hover {
+    opacity: 1;
+    background: rgba(255,255,255,0.1);
+  }
+
+  /* Admin navbar */
+  .navbar-admin {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    padding: 0.6rem 1rem;
+  }
+
+  .navbar-admin .nav-link {
+    padding: 0.8rem 1.2rem;
+    color: rgba(255,255,255,0.9) !important;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+  }
+
+  .navbar-admin .nav-link:hover {
+    background: rgba(255,255,255,0.12);
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+
+  .navbar-admin .nav-link i {
+    margin-right: 0.5rem;
+    opacity: 0.9;
+  }
+
+  /* Responsive styles */
+  @media (max-width: 992px) {
+    .navbar-collapse {
+      background: rgba(26, 42, 61, 0.98);
+      padding: 1.2rem;
+      border-radius: 12px;
+      margin-top: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-link {
+      padding: 1rem 1.5rem !important;
+      margin: 0.3rem 0;
+    }
+
+    .widgets-wrap {
+      justify-content: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .search-box {
+      margin: 1.2rem 0;
+    }
+
+    .user-info {
+      display: none;
+    }
+
+    .widget-header .icon {
+      width: 50px;
+      height: 50px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .navbar-brand img {
+      height: 35px;
+    }
+
+    .widgets-wrap {
+      gap: 0.8rem;
+    }
+
+    .widget-header .icon {
+      width: 42px;
+      height: 42px;
+    }
+  }
+</style>
+
+<header class="section-header">
+  <!-- Main Navbar -->
+  <nav class="navbar navbar-dark navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home:index' %}">
+        <img src="{% static 'images/logo.png' %}" alt="Logo" height="40">
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+              data-bs-target="#navbarMain" aria-controls="navbarMain" 
+              aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/' %}active{% endif %}" 
+               href="{% url 'home:index' %}">
+              <i class="fas fa-home me-1"></i>Trang chủ
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if 'wishlist' in request.path %}active{% endif %}" 
+               href="{% url 'products:wishlist' %}">
+              <i class="fas fa-heart me-1"></i>
+              Yêu thích {% if user.is_authenticated %}({{ request.user.wishlist.count }}){% endif %}
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if 'order' in request.path %}active{% endif %}" 
+               href="{% url 'accounts:order_history' %}">
+              <i class="fas fa-box me-1"></i>Đơn hàng
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if 'reviews' in request.path %}active{% endif %}" 
+               href="{% url 'products:product_reviews' %}">
+              <i class="fas fa-star me-1"></i>Đánh giá
+            </a>
+          </li>
+
+          {% if user.is_authenticated and user.is_staff %}
+          <li class="nav-item">
+            <a class="nav-link {% if 'analytics' in request.path %}active{% endif %}" 
+               href="{% url 'analytics:dashboard' %}">
+              <i class="fas fa-chart-line me-1"></i>Thống kê
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+
+        <!-- Search Box -->
+        <div class="search-box mx-lg-4">
+          <form method="GET" action="{% url 'home:product_search' %}">
+            <div class="position-relative">
+              <input type="text" class="form-control" name="q"
+                     placeholder="Tìm kiếm sản phẩm..."
+                     value="{{ query|default:'' }}">
+              <button class="btn" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- User Widgets -->
+        <div class="widgets-wrap">
+          <!-- Cart -->
+          <div class="widget-header">
+            <a href="{% url 'accounts:cart' %}" class="icon">
+              <i class="fas fa-shopping-cart"></i>
+            </a>
+            {% if user.is_authenticated and request.user.profile.get_cart_count > 0 %}
+            <span class="notify">{{ request.user.profile.get_cart_count }}</span>
+            {% endif %}
+          </div>
+
+          <!-- User Profile -->
+          <div class="widget-header d-flex align-items-center">
+            {% if user.is_authenticated %}
+              {% if user.profile.profile_image %}
+                <a href="{% url 'accounts:profile' username=user.username %}" class="icon">
+                  <img src="{{ user.profile.profile_image.url }}"
+                       alt="Profile" class="rounded-circle" width="42" height="42">
+                </a>
+              {% else %}
+                <a href="{% url 'accounts:profile' username=user.username %}" class="icon">
+                  <i class="fas fa-user"></i>
+                </a>
+              {% endif %}
+              <div class="user-info">
+                <div class="welcome">Xin chào, {{ user.first_name|default:user.username }}!</div>
+                <div class="links">
+                  <a href="{% url 'accounts:logout' %}">Đăng xuất</a>
+                </div>
+              </div>
+            {% else %}
+              <a href="{% url 'accounts:login' %}" class="icon">
+                <i class="fas fa-user"></i>
+              </a>
+              <div class="user-info">
+                <div class="welcome">Chào mừng</div>
+                <div class="links">
+                  <a href="{% url 'accounts:login' %}">Đăng nhập</a> |
+                  <a href="{% url 'accounts:register' %}">Đăng ký</a>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% if user.is_authenticated and user.is_staff %}
+  <!-- Admin Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-admin">
+    <div class="container">
+      <a class="navbar-brand text-white" href="{% url 'analytics:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Quản trị
+      </a>
+      
+      <button class="navbar-toggler" type="button" 
+              data-bs-toggle="collapse" data-bs-target="#adminNav"
+              aria-controls="adminNav" aria-expanded="false" 
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="adminNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin:index' %}">
+              <i class="fas fa-cog me-1"></i>Cài đặt
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin:products_product_changelist' %}">
+              <i class="fas fa-box me-1"></i>Sản phẩm
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin:accounts_order_changelist' %}">
+              <i class="fas fa-shopping-bag me-1"></i>Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin:auth_user_changelist' %}">
+              <i class="fas fa-users me-1"></i>Người dùng
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+</header>

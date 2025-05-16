@@ -1,0 +1,267 @@
+{% extends 'base/base.html' %}
+{% block title %}Thanh toán{% endblock %}
+{% load static %}
+
+{% block start %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Thông tin đơn hàng -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Địa chỉ giao hàng</h5>
+                </div>
+                <div class="card-body">
+                    {% if shipping_addresses %}
+                        <form method="POST" id="checkoutForm">
+                            {% csrf_token %}
+                            {% for address in shipping_addresses %}
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="shipping_address" 
+                                    id="address_{{ address.uid }}" value="{{ address.uid }}"
+                                    {% if address.is_default %}checked{% endif %}>
+                                <label class="form-check-label" for="address_{{ address.uid }}">
+                                    {{ address }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            <div class="mb-3">
+                                <a href="{% url 'accounts:shipping_address_add' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus me-2"></i>Thêm địa chỉ mới
+                                </a>
+                            </div>
+                            <div class="mb-3">
+                                <label for="order_note" class="form-label">Ghi chú đơn hàng:</label>
+                                <textarea class="form-control" id="order_note" name="order_note" rows="3"></textarea>
+                            </div>
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Phương thức thanh toán</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="radio" name="payment_method" 
+                                            id="payment_cod" value="cod" checked required>
+                                        <label class="form-check-label" for="payment_cod">
+                                            <i class="fas fa-money-bill-wave me-2"></i>
+                                            Thanh toán khi nhận hàng (COD)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" 
+                                            id="payment_vnpay" value="vnpay" required>
+                                        <label class="form-check-label" for="payment_vnpay">
+                                            <i class="fas fa-credit-card me-2"></i>
+                                            Thanh toán qua VNPay
+                                            <img src="{% static 'images/vnpay-logo.png' %}" alt="VNPay" height="20">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center">
+                            <p>Bạn chưa có địa chỉ giao hàng nào.</p>
+                            <a href="{% url 'accounts:shipping_address_add' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Thêm địa chỉ mới
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tổng quan đơn hàng -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tổng quan đơn hàng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>Tạm tính:</td>
+                                    <td class="text-end" id="subtotal" data-value="{{ cart.get_cart_total }}">
+                                        {{ cart.get_cart_total|floatformat:0 }} VNĐ
+                                    </td>
+                                </tr>
+                                {% if cart.coupon %}
+                                <tr>
+                                    <td>Giảm giá:</td>
+                                    <td class="text-end" id="discount" data-value="{{ cart.coupon.discount_amount }}">
+                                        -{{ cart.coupon.discount_amount|floatformat:0 }} VNĐ
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td>Phí vận chuyển:</td>
+                                    <td class="text-end" id="shipping_fee" data-value="30000">
+                                        30,000 VNĐ
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tổng cộng:</strong></td>
+                                    <td class="text-end">
+                                        <strong id="grand_total">
+                                            {{ cart.get_cart_total_price_after_coupon|add:30000|floatformat:0 }} VNĐ
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if shipping_addresses %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" form="checkoutForm">
+                            <i class="fas fa-check me-2"></i>Đặt hàng
+                        </button>
+                        <a href="{% url 'accounts:cart' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại giỏ hàng
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+    const shippingAddressInputs = document.querySelectorAll('input[name="shipping_address"]');
+    
+    // Validation khi submit form
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+
+        // Kiểm tra địa chỉ giao hàng
+        if (!Array.from(shippingAddressInputs).some(input => input.checked)) {
+            isValid = false;
+            errorMessage += 'Vui lòng chọn địa chỉ giao hàng!\n';
+        }
+
+        // Kiểm tra phương thức thanh toán
+        if (!Array.from(paymentMethodInputs).some(input => input.checked)) {
+            isValid = false;
+            errorMessage += 'Vui lòng chọn phương thức thanh toán!\n';
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert(errorMessage);
+            return;
+        }
+
+        // Xác nhận thanh toán
+        const selectedPayment = document.querySelector('input[name="payment_method"]:checked').value;
+        if (selectedPayment === 'vnpay') {
+            if (!confirm('Bạn sẽ được chuyển đến trang thanh toán VNPay. Tiếp tục?')) {
+                e.preventDefault();
+            }
+        } else {
+            if (!confirm('Xác nhận đặt hàng với phương thức thanh toán khi nhận hàng (COD)?')) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    // Hiển thị tổng tiền theo định dạng tiền tệ Việt Nam
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
+    // Cập nhật hiển thị tổng tiền
+    const updateTotalDisplay = () => {
+        const subtotalElement = document.getElementById('subtotal');
+        const shippingFeeElement = document.getElementById('shipping_fee');
+        const discountElement = document.getElementById('discount');
+        const grandTotalElement = document.getElementById('grand_total');
+
+        const subtotal = parseFloat(subtotalElement.dataset.value) || 0;
+        const shippingFee = parseFloat(shippingFeeElement.dataset.value) || 0;
+        const discount = parseFloat(discountElement?.dataset.value) || 0;
+
+        subtotalElement.textContent = formatCurrency(subtotal);
+        shippingFeeElement.textContent = formatCurrency(shippingFee);
+        if (discountElement) {
+            discountElement.textContent = formatCurrency(discount);
+        }
+        grandTotalElement.textContent = formatCurrency(subtotal + shippingFee - discount);
+    };
+
+    // Gọi hàm cập nhật khi trang được tải
+    updateTotalDisplay();
+});
+</script>
+
+<style>
+.payment-method-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-method-container .form-check {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+}
+
+.payment-method-container .form-check:hover {
+    background-color: #f8f9fa;
+}
+
+.payment-method-container .form-check-input:checked + .form-check-label {
+    font-weight: bold;
+}
+
+.shipping-address-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+}
+
+.shipping-address-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.shipping-address-card.selected {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.order-summary-table {
+    width: 100%;
+}
+
+.order-summary-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.order-summary-table td:last-child {
+    text-align: right;
+    font-weight: bold;
+}
+
+.order-summary-table tr:last-child td {
+    border-bottom: none;
+    font-size: 1.1em;
+}
+</style>
+{% endblock %} 

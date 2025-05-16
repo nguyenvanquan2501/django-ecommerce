@@ -1,0 +1,878 @@
+{% extends "base/base.html"%}
+{% block title %}{{product.product_name}} {% endblock %}
+{% block start %} {% load crispy_forms_tags %} {% load humanize %}
+
+<style>
+  .product-detail {
+    padding: 2rem 0;
+  }
+
+  /* Gallery styles */
+  .gallery-wrap {
+    position: relative;
+    padding: 1rem;
+  }
+
+  .img-big-wrap {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  #mainImage {
+    max-height: 500px;
+    object-fit: contain;
+    width: 100%;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .zoomed-in {
+    transform: scale(1.8);
+    cursor: zoom-out;
+  }
+
+  .thumbs-wrap {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .item-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .item-thumb:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Product info styles */
+  .product-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+  }
+
+  .product-category {
+    color: #718096;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .rating-wrap {
+    background: #f7fafc;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .rating-stars {
+    display: inline-flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    font-size: 1.2rem;
+    color: #ecc94b;
+  }
+
+  .stars-active {
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .price-wrap {
+    margin: 1.5rem 0;
+  }
+
+  .product-price {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .product-description {
+    color: #4a5568;
+    line-height: 1.8;
+    margin: 1.5rem 0;
+    text-align: justify;
+  }
+
+  .product-meta {
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+  }
+
+  .meta-item {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+
+  .meta-label {
+    font-weight: 600;
+    width: 120px;
+    color: #4a5568;
+  }
+
+  .meta-value {
+    color: #718096;
+  }
+
+  /* Controls styles */
+  .quantity-control {
+    display: flex;
+    align-items: center;
+    max-width: 150px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .quantity-control .btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background-color: #f7fafc;
+    border: none;
+    color: #4a5568;
+    transition: all 0.2s;
+  }
+
+  .quantity-control .btn:hover {
+    background-color: #edf2f7;
+    color: #2d3748;
+  }
+
+  .quantity-control input[type="number"] {
+    width: 60px;
+    height: 40px;
+    text-align: center;
+    font-size: 1rem;
+    border: none;
+    background: #fff;
+    -moz-appearance: textfield;
+  }
+
+  .quantity-control input[type="number"]::-webkit-outer-spin-button,
+  .quantity-control input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Size selector styles */
+  .size-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .size-radio {
+    display: none;
+  }
+
+  .size-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    color: #4a5568;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .size-radio:checked + .size-label {
+    background: #4299e1;
+    border-color: #4299e1;
+    color: #fff;
+  }
+
+  .size-label:hover {
+    border-color: #4299e1;
+    transform: translateY(-2px);
+  }
+
+  /* Action buttons */
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .btn-primary {
+    background: #4299e1;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+  }
+
+  .like-btn {
+    background-color: #48bb78;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .like-btn:hover {
+    background-color: #38a169;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2);
+  }
+
+  .dislike-btn {
+    background-color: #f56565;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .dislike-btn:hover {
+    background-color: #e53e3e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.2);
+  }
+
+  /* Responsive styles */
+  @media (max-width: 768px) {
+    .product-title {
+      font-size: 1.5rem;
+    }
+
+    .product-price {
+      font-size: 1.5rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .like-btn,
+    .dislike-btn {
+      width: 100%;
+    }
+
+    .thumbs-wrap {
+      justify-content: center;
+    }
+
+    .item-thumb {
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  /* Review section styles */
+  .reviews-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1.5rem;
+  }
+
+  .review-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+  }
+
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .reviewer-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .reviewer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a5568;
+  }
+
+  .reviewer-name {
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .review-date {
+    color: #718096;
+    font-size: 0.875rem;
+  }
+
+  .review-rating {
+    color: #ecc94b;
+    font-size: 1.1rem;
+  }
+
+  .review-content {
+    color: #4a5568;
+    line-height: 1.6;
+    margin: 1rem 0;
+  }
+
+  .review-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .review-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    background: #f7fafc;
+    color: #4a5568;
+    border: none;
+  }
+
+  .review-action-btn:hover {
+    background: #edf2f7;
+    transform: translateY(-1px);
+  }
+
+  .review-action-btn i {
+    font-size: 1rem;
+  }
+
+  .review-count {
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .review-form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+  }
+
+  .review-form-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+  }
+
+  .star-rating {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-direction: row-reverse;
+  }
+
+  .star-rating input {
+    display: none;
+  }
+
+  .star-rating label {
+    cursor: pointer;
+    color: #e2e8f0;
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .star-rating label:hover,
+  .star-rating label:hover ~ label {
+    color: #ecc94b;
+  }
+
+  .star-rating input:checked ~ label {
+    color: #ecc94b;
+  }
+
+  .rating-display {
+    color: #ecc94b;
+    font-size: 1.1rem;
+  }
+
+  .rating-display .fa-star {
+    margin-right: 2px;
+  }
+
+  .submit-review-btn {
+    background: #4299e1;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .submit-review-btn:hover {
+    background: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    .review-header {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .review-actions {
+      justify-content: space-between;
+    }
+  }
+</style>
+
+<section class="product-detail">
+  <div class="container">
+    {% include 'base/alert.html' %}
+    <div class="card shadow-sm border-0">
+      <div class="row g-0">
+        <div class="col-lg-6">
+          <!-- Gallery -->
+          <div class="gallery-wrap">
+            <div class="img-big-wrap">
+              <div class="carousel-inner">
+                {% for image in product.product_images.all %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                  <img
+                    id="mainImage"
+                    src="/media/{{ image.image }}"
+                    alt="{{ product.product_name }}"
+                    class="img-fluid"
+                  />
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Thumbnails -->
+            <div class="thumbs-wrap">
+              {% for image in product.product_images.all %}
+              <div class="item-thumb">
+                <img
+                  src="/media/{{image.image}}"
+                  alt="Thumbnail"
+                  onclick="updateMainImage(this.src)"
+                />
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="p-4">
+            <h1 class="product-title">{{product.product_name}}</h1>
+            <div class="product-category">{{product.category}}</div>
+
+            <!-- Rating -->
+            <div class="rating-wrap">
+              <div class="d-flex align-items-center mb-2">
+                <div class="rating-display me-2">
+                  {% for i in "12345"|make_list %}
+                    {% if forloop.counter <= product.get_rating %}
+                      <i class="fas fa-star"></i>
+                    {% else %}
+                      <i class="far fa-star"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                <span class="text-muted">{{ product.get_rating }} ({{ product.reviews.count }} đánh giá)</span>
+              </div>
+              <div class="text-success">
+                <i class="fa fa-clipboard-check"></i> {{ product.get_order_count }} đơn hàng
+              </div>
+            </div>
+
+            <!-- Giá -->
+            <div class="price-wrap">
+              <span class="product-price">
+                {% if updated_price %}
+                  {{ updated_price|floatformat:0|intcomma }} ₫
+                {% else %}
+                  {{ product.price|floatformat:0|intcomma }} ₫
+                {% endif %}
+              </span>
+            </div>
+
+            <!-- Description -->
+            <div class="product-description">
+              {{product.product_desription}}
+            </div>
+
+            <!-- Product Meta -->
+            <div class="product-meta">
+              <div class="meta-item">
+                <div class="meta-label">Thương hiệu</div>
+                <div class="meta-value">Nike</div>
+              </div>
+              <div class="meta-item">
+                <div class="meta-label">Màu sắc</div>
+                <div class="meta-value">
+                  {% for color in product.color_variant.all %}
+                    {{ color.color_name }}
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="meta-item">
+                <div class="meta-label">Tồn kho</div>
+                <div class="meta-value {% if product.stock <= 0 %}text-danger{% endif %}">
+                  {% if product.stock > 0 %}
+                    {{ product.stock }} sản phẩm
+                  {% else %}
+                    Hết hàng
+                  {% endif %}
+                </div>
+              </div>
+              <div class="meta-item">
+                <div class="meta-label">Vận chuyển</div>
+                <div class="meta-value">Toàn quốc</div>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            {% if product.stock > 0 %}
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">Số lượng</label>
+                <div class="quantity-control">
+                  <button class="btn" type="button" id="button-minus" onclick="updateQuantity(-1)">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                  <input 
+                    type="number" 
+                    value="1" 
+                    min="1"
+                    max="{{ product.stock }}"
+                    name="quantity"
+                    id="quantity"
+                    onchange="updateCartUrl()"
+                  />
+                  <button class="btn" type="button" id="button-plus" onclick="updateQuantity(1)">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+                <small class="text-muted">Còn {{ product.stock }} sản phẩm</small>
+              </div>
+
+              {% if sorted_size_variants %}
+              <div class="col-md-6">
+                <label class="form-label">Kích thước</label>
+                <div class="size-options">
+                  {% for size in sorted_size_variants %}
+                  <input type="radio" class="size-radio" name="size" id="size-{{ size.size_name }}" 
+                         value="{{ size.size_name }}" {% if forloop.first %}checked{% endif %}
+                         onchange="updateCartUrl()">
+                  <label class="size-label" for="size-{{ size.size_name }}">
+                    {{ size.size_name }}
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="action-buttons">
+              <a href="#" class="btn btn-primary" id="add-to-cart-btn">
+                <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+              </a>
+              {% if user.is_authenticated %}
+                <a href="{% url 'products:add_to_wishlist' product.uid %}" 
+                   class="btn btn-light toggle-wishlist-btn"
+                   data-product-id="{{ product.uid }}"
+                   data-bs-toggle="tooltip" 
+                   title="{% if in_wishlist %}Bỏ khỏi yêu thích{% else %}Thêm vào yêu thích{% endif %}">
+                    <i class="fas fa-heart {% if in_wishlist %}text-danger{% endif %}"></i>
+                </a>
+              {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn btn-light">
+                  <i class="fas fa-heart"></i>
+                </a>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Sản phẩm hiện đang hết hàng. Vui lòng quay lại sau!
+            </div>
+            <div class="action-buttons">
+              <a href="#" class="btn btn-light" id="add-to-wishlist-btn">
+                <i class="fas fa-heart me-2"></i>Thêm vào yêu thích
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Reviews Section -->
+<section class="reviews-section">
+  <div class="container">
+    <h2 class="section-title">Đánh giá sản phẩm</h2>
+    
+    <!-- Review Form -->
+    <div class="review-form-card">
+      <h3 class="review-form-title">Viết đánh giá của bạn</h3>
+      {% if user.is_authenticated %}
+        <form method="post" class="review-form">
+          {% csrf_token %}
+          <div class="star-rating mb-3">
+            {% for i in "54321"|make_list %}
+            <input type="radio" name="stars" value="{{ i }}" id="star{{ i }}" required>
+            <label for="star{{ i }}"><i class="fas fa-star"></i></label>
+            {% endfor %}
+          </div>
+          {{ review_form.content|as_crispy_field }}
+          <button type="submit" class="submit-review-btn">
+            <i class="fas fa-paper-plane me-2"></i>Gửi đánh giá
+          </button>
+        </form>
+      {% else %}
+        <div class="alert alert-warning">
+          Vui lòng <a href="{% url 'accounts:login' %}" class="alert-link">đăng nhập</a> để viết đánh giá
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Existing Reviews -->
+    {% for review in product.reviews.all %}
+    <div class="review-card">
+      <div class="review-header">
+        <div class="reviewer-info">
+          <div class="reviewer-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div>
+            <div class="reviewer-name">{{ review.user.get_full_name }}</div>
+            <div class="review-date">{{ review.date_added|date:"d/m/Y" }}</div>
+          </div>
+        </div>
+        <div class="rating-display">
+          {% for i in "12345"|make_list %}
+            {% if forloop.counter <= review.stars %}
+              <i class="fas fa-star"></i>
+            {% else %}
+              <i class="far fa-star"></i>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="review-content">
+        {{ review.content }}
+      </div>
+
+      <div class="review-actions">
+        {% if user.is_authenticated %}
+        <button class="review-action-btn" onclick="toggleLike('{{ review.uid }}')">
+          <i class="fas fa-thumbs-up"></i>
+          <span class="review-count" id="like-count-{{ review.uid }}">{{ review.like_count }}</span>
+        </button>
+        <button class="review-action-btn" onclick="toggleDislike('{{ review.uid }}')">
+          <i class="fas fa-thumbs-down"></i>
+          <span class="review-count" id="dislike-count-{{ review.uid }}">{{ review.dislike_count }}</span>
+        </button>
+        {% endif %}
+
+        {% if review.user == request.user %}
+        <button class="review-action-btn text-danger ms-auto" 
+                onclick="setDeleteAction('{% url 'products:delete_review' product.slug review.uid %}')"
+                data-bs-toggle="modal" 
+                data-bs-target="#deleteReviewModal">
+          <i class="fas fa-trash-alt"></i>
+          <span>Xóa</span>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">
+      Chưa có đánh giá nào cho sản phẩm này
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Delete Review Modal -->
+<div class="modal fade" id="deleteReviewModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận xóa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn xóa đánh giá này?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <form id="deleteReviewForm" method="POST" style="display: inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Xóa</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Lấy CSRF token từ cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  // Thêm CSRF token vào headers của mọi request AJAX
+  function fetchWithCSRF(url, options = {}) {
+    const defaultOptions = {
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin'
+    };
+    return fetch(url, { ...defaultOptions, ...options });
+  }
+
+  function updateMainImage(src) {
+    document.getElementById('mainImage').src = src;
+  }
+
+  document.getElementById('mainImage').addEventListener('click', function() {
+    this.classList.toggle('zoomed-in');
+  });
+
+  function updateQuantity(change) {
+    const input = document.getElementById('quantity');
+    const newValue = parseInt(input.value) + change;
+    if (newValue >= 1) {
+      input.value = newValue;
+      updateCartUrl();
+    }
+  }
+
+  function updateCartUrl() {
+    const quantity = document.getElementById('quantity').value;
+    const selectedSize = document.querySelector('input[name="size"]:checked')?.value || '';
+    const addCartBtn = document.getElementById('add-to-cart-btn');
+    const baseUrl = "{% url 'accounts:add_to_cart' product.uid %}";
+    addCartBtn.href = `${baseUrl}?quantity=${quantity}&size=${selectedSize}`;
+  }
+
+  // Initialize cart URL
+  updateCartUrl();
+
+  function toggleLike(reviewId) {
+    fetch(`/products/review/like/${reviewId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById(`like-count-${reviewId}`).textContent = data.likes;
+      document.getElementById(`dislike-count-${reviewId}`).textContent = data.dislikes;
+    });
+  }
+
+  function toggleDislike(reviewId) {
+    fetch(`/products/review/dislike/${reviewId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById(`like-count-${reviewId}`).textContent = data.likes;
+      document.getElementById(`dislike-count-${reviewId}`).textContent = data.dislikes;
+    });
+  }
+
+  function setDeleteAction(actionUrl) {
+    const deleteForm = document.getElementById('deleteReviewForm');
+    deleteForm.action = actionUrl;
+  }
+</script>
+
+{% block extrajs %}
+<!-- Xóa toàn bộ script cũ trong block extrajs vì đã được xử lý trong wishlist.js -->
+{% endblock %}
+
+{% endblock %}

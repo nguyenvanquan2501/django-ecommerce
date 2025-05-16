@@ -1,0 +1,193 @@
+{% extends 'base/base.html' %}
+{% block title %}Thống kê{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 400px;
+    width: 100%;
+}
+.card {
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block start %}
+<div class="container mt-4">
+    <h2 class="mb-4">Thống kê doanh thu và đơn hàng</h2>
+
+    <div class="row">
+        <!-- Biểu đồ doanh thu theo tháng -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Doanh thu theo tháng (6 tháng gần nhất)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="monthlyRevenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ đơn hàng theo ngày -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Số đơn hàng theo ngày (30 ngày gần nhất)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="dailyOrdersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ phương thức thanh toán -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Phân bố phương thức thanh toán</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="paymentMethodChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dữ liệu cho biểu đồ doanh thu theo tháng
+    const monthlyData = {
+        labels: [{% for stat in monthly_stats %}'{{ stat.month|date:"m/Y" }}',{% endfor %}],
+        datasets: [{
+            label: 'Doanh thu (VNĐ)',
+            data: [{% for stat in monthly_stats %}{{ stat.total_revenue|default:0 }},{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1,
+            fill: false
+        }]
+    };
+
+    // Dữ liệu cho biểu đồ đơn hàng theo ngày
+    const dailyData = {
+        labels: [{% for stat in daily_stats %}'{{ stat.day|date:"d/m" }}',{% endfor %}],
+        datasets: [{
+            label: 'Số đơn hàng',
+            data: [{% for stat in daily_stats %}{{ stat.total_orders }},{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgb(54, 162, 235)',
+            borderWidth: 1
+        }]
+    };
+
+    // Dữ liệu cho biểu đồ phương thức thanh toán
+    const paymentData = {
+        labels: [{% for stat in payment_stats %}'{{ stat.get_payment_method_display }}',{% endfor %}],
+        datasets: [{
+            data: [{% for stat in payment_stats %}{{ stat.total_orders }},{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+            ],
+            borderColor: [
+                'rgb(255, 99, 132)',
+                'rgb(54, 162, 235)',
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    // Vẽ biểu đồ doanh thu theo tháng
+    new Chart(document.getElementById('monthlyRevenueChart'), {
+        type: 'line',
+        data: monthlyData,
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Doanh thu theo tháng'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('vi-VN') + ' VNĐ';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Vẽ biểu đồ đơn hàng theo ngày
+    new Chart(document.getElementById('dailyOrdersChart'), {
+        type: 'bar',
+        data: dailyData,
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Số đơn hàng theo ngày'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Vẽ biểu đồ phương thức thanh toán
+    new Chart(document.getElementById('paymentMethodChart'), {
+        type: 'pie',
+        data: paymentData,
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Phân bố phương thức thanh toán'
+                },
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.raw || 0;
+                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            let percentage = Math.round((value * 100) / total);
+                            return `${label}: ${value} đơn (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
